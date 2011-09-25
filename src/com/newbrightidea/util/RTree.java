@@ -522,29 +522,6 @@ public class RTree<T>
    * Returns the increase in area necessary for the given rectangle to cover the
    * given entry.
    */
-//   private float getRequiredExpansion( float[] coords, float[] dimensions,
-//   Node e )
-//   {
-//   float area = getArea(dimensions);
-//   float[] deltas = new float[dimensions.length];
-//   for ( int i = 0; i < deltas.length; i++ )
-//   {
-//   if ( coords[i] + dimensions[i] < e.coords[i] + e.dimensions[i] )
-//   {
-//   deltas[i] = e.coords[i] + e.dimensions[i] - coords[i] - dimensions[i];
-//   }
-//   else if ( coords[i] + dimensions[i] > e.coords[i] + e.dimensions[i] )
-//   {
-//   deltas[i] = coords[i] - e.coords[i];
-//   }
-//   }
-//   float expanded = 1.0f;
-//   for ( int i = 0; i < dimensions.length; i++ )
-//   {
-//   area *= dimensions[i] + deltas[i];
-//   }
-//   return (expanded - area);
-//   }
   private float getRequiredExpansion(float[] coords, float[] dimensions, Node e)
   {
     float area = getArea(dimensions);
@@ -559,13 +536,6 @@ public class RTree<T>
       {
         deltas[i] = coords[i] - e.coords[i];
       }
-      /*
-       * if( coords[i] + dimensions[i] < e.coords[i] + e.dimensions[i] ) {
-       * deltas[i] = e.coords[i] + e.dimensions[i] - coords[i] - dimensions[i];
-       * &nbsp ; if( coords[i] > e.coords[i] ) deltas[i] += coords[i] -
-       * e.coords[i]; } else if (coords[i] + dimensions[i] > e.coords[i] +
-       * e.dimensions[i]) { deltas[i] = coords[i] - e.coords[i]; }
-       */
     }
     float expanded = 1.0f;
     for (int i = 0; i < dimensions.length; i++)
