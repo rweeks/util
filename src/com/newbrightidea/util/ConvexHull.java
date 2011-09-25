@@ -1,10 +1,3 @@
-/**
- * $Id$
- *
- *
- * Copyright (c) 2011 Ericsson AB
- */
-
 package com.newbrightidea.util;
 
 import java.util.*;
