@@ -2,6 +2,7 @@ package com.newbrightidea.util;
 
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.Iterator;
 import java.util.List;
 
 import org.junit.Test;
@@ -87,7 +88,7 @@ public class TestRTree
                 new float[] { 0.5f,  0.5f});
     assert(results.isEmpty());
   }
-  
+
   @Test
   public void testSplitNodesSmall()
   {
@@ -104,7 +105,82 @@ public class TestRTree
     assert (results.size() == 1);
     assert (results.get(0).equals(entries[2]));
   }
-  
+
+  @Test
+  public void testRemoveAll()
+  {
+    // setup is like testSplitNodesSmall
+    RTree<Object> rt = new RTree(2,1,2);
+    float[][] coords = new float[][] { {0.0f, 0.0f}, {1.0f, 1.0f}, {2.0f, 2.0f}, {3.0f, 3.0f} };
+    float[] dims = new float[]{0.5f, 0.5f};
+    Object[] entries = new Object[] { new Object(), new Object(), new Object(), new Object() };
+    for (int i = 0; i < entries.length; i++ )
+    {
+      rt.insert(coords[i], dims, entries[i]);
+    }
+    List<Object> results = rt.search(new float[] {2.0f, 2.0f},
+                                     new float[] {0.5f, 0.5f});
+    assert (results.size() == 1);
+    assert (results.get(0).equals(entries[2]));
+
+    float[] sCoords = new float[] { -0.5f * Float.MAX_VALUE, -0.5f * Float.MAX_VALUE };
+    float[] sDims = new float[] { Float.MAX_VALUE, Float.MAX_VALUE };
+    results = rt.search(sCoords, sDims);
+    assert(results.size() == rt.size());
+    for ( Object result: results )
+    {
+      boolean deleted = rt.delete(sCoords, sDims, result);
+      assert(deleted);
+    }
+    assert(rt.size() == 0);
+    float [] newCoords = new float[] { 0.0f, 0.0f };
+    float [] newDims = new float[] { 0.0f, 0.0f };
+    Object entry = new Object();
+    rt.insert(newCoords, newDims, entry);
+    assert( rt.search(newCoords, newDims).get(0) == entry );
+  }
+
+  @Test
+  public void testRemoveAlmostAll()
+  {
+    // setup is like testSplitNodesSmall
+    RTree<Object> rt = new RTree(2,1,2);
+    float[][] coords = new float[][] { {0.0f, 0.0f}, {1.0f, 1.0f}, {2.0f, 2.0f}, {3.0f, 3.0f} };
+    float[] dims = new float[]{0.5f, 0.5f};
+    Object[] entries = new Object[] { new Object(), new Object(), new Object(), new Object() };
+    for (int i = 0; i < entries.length; i++ )
+    {
+      rt.insert(coords[i], dims, entries[i]);
+    }
+    List<Object> results = rt.search(new float[] {2.0f, 2.0f},
+                                     new float[] {0.5f, 0.5f});
+    assert (results.size() == 1);
+    assert (results.get(0).equals(entries[2]));
+
+    float[] sCoords = new float[] { -0.5f * Float.MAX_VALUE, -0.5f * Float.MAX_VALUE };
+    float[] sDims = new float[] { Float.MAX_VALUE, Float.MAX_VALUE };
+    results = rt.search(sCoords, sDims);
+    assert(results.size() == rt.size());
+    Iterator resultIter = results.iterator();
+    while ( resultIter.hasNext() )
+    {
+      Object toRemove = resultIter.next();
+      if ( !resultIter.hasNext() )
+      {
+        break;
+      }
+      boolean deleted = rt.delete(sCoords, sDims, toRemove);
+      assert(deleted);
+    }
+
+    assert(rt.size() == 1);
+    float [] newCoords = new float[] { 0.0f, 0.0f };
+    float [] newDims = new float[] { 0.0f, 0.0f };
+    Object entry = new Object();
+    rt.insert(newCoords, newDims, entry);
+    assert( rt.search(newCoords, newDims).get(0) == entry );
+  }
+
   @Test
   public void testSplitNodesBig()
   {

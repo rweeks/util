@@ -96,6 +96,14 @@ public class RTree<T>
   }
 
   /**
+   * @return the number of items in this tree.
+   */
+  public int size()
+  {
+    return size;
+  }
+
+  /**
    * Searches the RTree for objects overlapping with the given rectangle.
    * 
    * @param coords
@@ -175,6 +183,10 @@ public class RTree<T>
     {
       condenseTree(l);
       size--;
+    }
+    if ( size == 0 )
+    {
+      root = buildRoot(true);
     }
     return (removed != null);
   }
