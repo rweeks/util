@@ -1,14 +1,8 @@
 package com.newbrightidea.util;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.List;
-
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.FileImageOutputStream;
 
 import org.junit.Test;
 
@@ -114,7 +108,7 @@ public class TestRTree
   @Test
   public void testSplitNodesBig()
   {
-    RTree<Object> rt = new RTree<Object>(4,2,2);
+    RTree<Object> rt = new RTree<Object>(50,2,2);
     int numEntries = rt.getMaxEntries() * 4;
     float[] coords = new float[] { 0.0f, 0.0f };
     float[] dims = new float[] { 0.5f, 0.5f };
