@@ -446,7 +446,7 @@ public class RTree<T>
           nMinUb = n;
         }
       }
-      float sep = (nMaxLb == nMinUb) ? 0.0f :
+      float sep = (nMaxLb == nMinUb) ? -1.0f :
                   Math.abs((dimMinUb - dimMaxLb) / (dimUb - dimLb));
       if (sep >= bestSep)
       {
