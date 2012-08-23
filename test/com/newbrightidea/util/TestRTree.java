@@ -2,6 +2,7 @@ package com.newbrightidea.util;
 
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -174,11 +175,13 @@ public class TestRTree
     }
 
     assert(rt.size() == 1);
-    float [] newCoords = new float[] { 0.0f, 0.0f };
+    float [] newCoords = new float[] { 5.0f, 5.0f };
     float [] newDims = new float[] { 0.0f, 0.0f };
     Object entry = new Object();
     rt.insert(newCoords, newDims, entry);
-    assert( rt.search(newCoords, newDims).get(0) == entry );
+    results = rt.search(newCoords, newDims);
+    assert (results.size() == 1);
+    assert (results.get(0) == entry);
   }
 
   @Test
@@ -244,4 +247,39 @@ public class TestRTree
     results = rt.search(ZEROES, ONES);
     assert(results.size() == 0);
   }
+
+  @Test
+  public void testInsertDelete() {
+    class DataObject {
+      final float[] val;
+      final float[] dim;
+      final Integer id;
+
+      DataObject(float[] val, float[] dim, int id) {
+        this.val = val;
+        this.dim = dim;
+        this.id = id;
+      }
+    }
+
+    RTree<Integer> tree = new RTree<Integer>(10, 2, 3);
+    List<DataObject> rects = new ArrayList<DataObject>();
+
+    for (int i = 0; i < 100; i++) {
+      rects.add(new DataObject(
+          new float[]{i, i * 2, i * 3},
+          new float[]{0, 0, 0},
+          i));
+      DataObject dataObject = rects.get(i);
+      tree.insert(dataObject.val, dataObject.dim, dataObject.id);
+    }
+
+    for (int i = 0; i < 100; i++) {
+      DataObject dataObject = rects.get(i);
+      System.out.print(" " + i);
+      boolean deleted = tree.delete(dataObject.val, dataObject.dim, dataObject.id);
+      assert deleted;
+    }
+  }
+
 }

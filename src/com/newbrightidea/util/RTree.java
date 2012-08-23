@@ -498,6 +498,10 @@ public class RTree<T>
 
   private RTree<T>.Node chooseLeaf(RTree<T>.Node n, RTree<T>.Entry e)
   {
+    if (n == null)
+    {
+      System.out.println( "WTF?" );
+    }
     if (n.leaf)
     {
       return n;
