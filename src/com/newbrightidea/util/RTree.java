@@ -165,12 +165,8 @@ public class RTree<T>
     assert (coords.length == numDims);
     assert (dimensions.length == numDims);
     Node l = findLeaf(root, coords, dimensions, entry);
-    if (l == null )
-    {
-      System.out.println( "WTF?" );
-      findLeaf(root, coords, dimensions, entry);
-    }
-    assert (l.leaf);
+    assert (l != null) : "Could not find leaf for entry to delete";
+    assert (l.leaf) : "Entry is not found at leaf?!?";
     ListIterator<Node> li = l.children.listIterator();
     T removed = null;
     while (li.hasNext())
@@ -264,6 +260,11 @@ public class RTree<T>
     {
       root = buildRoot(true);
     }
+    else if ( (root.children.size() == 1) && (!root.leaf) )
+    {
+      root = root.children.get(0);
+      root.parent = null;
+    }
     else
     {
       tighten(root);
@@ -275,6 +276,15 @@ public class RTree<T>
       insert(e.coords, e.dimensions, e.entry);
     }
     size -= q.size();
+  }
+
+  /**
+   * Empties the RTree
+   */
+  public void clear()
+  {
+    root = buildRoot(true);
+    // let the GC take care of the rest.
   }
 
   /**
@@ -309,15 +319,6 @@ public class RTree<T>
     }
   }
 
-  /**
-   * Empties the RTree
-   */
-  public void clear()
-  {
-    root = buildRoot(true);
-    // let the GC take care of the rest.
-  }
-  
   private void adjustTree(Node n, Node nn)
   {
     if (n == root)
@@ -344,7 +345,7 @@ public class RTree<T>
         adjustTree(splits[0], splits[1]);
       }
     }
-    else if (n.parent != null)
+    if (n.parent != null)
     {
       adjustTree(n.parent, null);
     }
@@ -372,6 +373,8 @@ public class RTree<T>
       {
         nn[1].children.addAll(cc);
         cc.clear();
+        tighten(nn[0]); // Not sure this is required.
+        tighten(nn[1]);
         return nn;
       }
       else if ((nn[1].children.size() >= minEntries)
@@ -379,6 +382,8 @@ public class RTree<T>
       {
         nn[0].children.addAll(cc);
         cc.clear();
+        tighten(nn[0]); // Not sure this is required.
+        tighten(nn[1]);
         return nn;
       }
       Node c = cc.pop();

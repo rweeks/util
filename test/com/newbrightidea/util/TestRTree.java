@@ -262,23 +262,25 @@ public class TestRTree
       }
     }
 
-    RTree<Integer> tree = new RTree<Integer>(4, 2, 3);
-    List<DataObject> rects = new ArrayList<DataObject>();
+    for ( int j = 0; j < 500; j++ )
+    {
+      RTree<Integer> tree = new RTree<Integer>(10, 2, 3);
+      List<DataObject> rects = new ArrayList<DataObject>();
 
-    for (int i = 0; i < 15; i++) {
-      rects.add(new DataObject(
-          new float[]{i, i * 2, i * 3},
-          new float[]{0, 0, 0},
-          i));
-      DataObject dataObject = rects.get(i);
-      tree.insert(dataObject.val, dataObject.dim, dataObject.id);
-    }
+      for (int i = 0; i < 100; i++) {
+        rects.add(new DataObject(
+            new float[]{i, i * 2, i * 3},
+            new float[]{0, 0, 0},
+            i));
+        DataObject dataObject = rects.get(i);
+        tree.insert(dataObject.val, dataObject.dim, dataObject.id);
+      }
 
-    for (int i = 0; i < 15; i++) {
-      DataObject dataObject = rects.get(i);
-      System.out.print(" " + i);
-      boolean deleted = tree.delete(dataObject.val, dataObject.dim, dataObject.id);
-      assert deleted;
+      for (int i = 0; i < 100; i++) {
+        DataObject dataObject = rects.get(i);
+        boolean deleted = tree.delete(dataObject.val, dataObject.dim, dataObject.id);
+        assert deleted;
+      }
     }
   }
 
