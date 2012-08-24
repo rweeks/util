@@ -165,6 +165,11 @@ public class RTree<T>
     assert (coords.length == numDims);
     assert (dimensions.length == numDims);
     Node l = findLeaf(root, coords, dimensions, entry);
+    if (l == null )
+    {
+      System.out.println( "WTF?" );
+      findLeaf(root, coords, dimensions, entry);
+    }
     assert (l.leaf);
     ListIterator<Node> li = l.children.listIterator();
     T removed = null;
@@ -255,12 +260,21 @@ public class RTree<T>
       }
       n = n.parent;
     }
+    if ( root.children.size() == 0 )
+    {
+      root = buildRoot(true);
+    }
+    else
+    {
+      tighten(root);
+    }
     for (Node ne : q)
     {
       @SuppressWarnings("unchecked")
       Entry e = (Entry) ne;
       insert(e.coords, e.dimensions, e.entry);
     }
+    size -= q.size();
   }
 
   /**
@@ -469,12 +483,13 @@ public class RTree<T>
 
   private void tighten(Node n)
   {
-    float[] minCoords = new float[n.coords.length];
-    float[] maxDimensions = new float[n.dimensions.length];
-    for (int i = 0; i < minCoords.length; i++)
+    assert(n.children.size() > 0) : "tighten() called on empty node!";
+    float[] minCoords = new float[numDims];
+    float[] maxCoords = new float[numDims];
+    for (int i = 0; i < numDims; i++)
     {
       minCoords[i] = Float.MAX_VALUE;
-      maxDimensions[i] = 0.0f;
+      maxCoords[i] = Float.MIN_VALUE;
 
       for (Node c : n.children)
       {
@@ -486,22 +501,23 @@ public class RTree<T>
         {
           minCoords[i] = c.coords[i];
         }
-        if ((c.coords[i] + c.dimensions[i]) > maxDimensions[i])
+        if ((c.coords[i] + c.dimensions[i]) > maxCoords[i])
         {
-          maxDimensions[i] = (c.coords[i] + c.dimensions[i]);
+          maxCoords[i] = (c.coords[i] + c.dimensions[i]);
         }
       }
     }
-    System.arraycopy(minCoords, 0, n.coords, 0, minCoords.length);
-    System.arraycopy(maxDimensions, 0, n.dimensions, 0, maxDimensions.length);
+    for (int i = 0; i < numDims; i++)
+    {
+      // Convert max coords to dimensions
+      maxCoords[i] -= minCoords[i];
+    }
+    System.arraycopy(minCoords, 0, n.coords, 0, numDims);
+    System.arraycopy(maxCoords, 0, n.dimensions, 0, numDims);
   }
 
   private RTree<T>.Node chooseLeaf(RTree<T>.Node n, RTree<T>.Entry e)
   {
-    if (n == null)
-    {
-      System.out.println( "WTF?" );
-    }
     if (n.leaf)
     {
       return n;
