@@ -284,4 +284,66 @@ public class TestRTree
     }
   }
 
+  @Test
+  public void testInsertNegCoords() {
+    class DataObject {
+      final float[] val;
+      final float[] dim;
+      final Integer id;
+
+      DataObject(float[] val, float[] dim, int id) {
+        this.val = val;
+        this.dim = dim;
+        this.id = id;
+      }
+    }
+
+    for ( int j = 0; j < 500; j++ )
+    {
+      RTree<Integer> tree = new RTree<Integer>(10, 2, 3);
+      List<DataObject> rects = new ArrayList<DataObject>();
+
+      for (int i = -70; i < 80; i++) {
+        rects.add(new DataObject(
+            new float[]{i, i * 2, i * 3},
+            new float[]{0, 0, 0},
+            i));
+        DataObject dataObject = rects.get(70+i);
+        tree.insert(dataObject.val, dataObject.dim, dataObject.id);
+      }
+
+      for (int i = 0; i < rects.size(); i++) {
+        DataObject dataObject = rects.get(i);
+        boolean deleted = tree.delete(dataObject.val, dataObject.dim, dataObject.id);
+        assert deleted;
+      }
+      assert tree.size() == 0;
+    }
+  }
+
+  @Test
+  public void testCircleInsert() {
+    RTree<Integer> tree = new RTree<Integer>(10, 2, 3);
+    tree.insert(new float[] {-133.35106f, -27.210342f, -20.107727f}, 0);
+    tree.insert(new float[] {-123.99338f, -48.480087f, 4.125839f}, 1);
+    tree.insert(new float[] {-105.43765f, -103.077614f, 43.90358f}, 2);
+    tree.insert(new float[] {-63.769794f, -96.73669f, 55.480133f}, 3);
+    tree.insert(new float[] {18.339613f, -96.38262f, 62.539703f}, 4);
+    tree.insert(new float[] {86.32401f, -75.77544f, 38.990417f}, 5);
+    tree.insert(new float[] {114.32304f, -54.91469f, 14.197311f}, 6);
+    tree.insert(new float[] {129.68332f, -6.8892365f, -39.09485f}, 7);
+    tree.insert(new float[] {90.21576f, 41.889008f, -84.45425f}, 8);
+    tree.insert(new float[] {49.884323f, 57.874786f, -95.06121f}, 9);
+    tree.insert(new float[] {-28.798616f, 63.59677f, -101.57546f}, 10);
+    tree.insert(new float[] {-75.07794f, 55.577896f, -104.90407f}, 11);
+    tree.insert(new float[] {-111.65004f, 32.36528f, -83.63572f}, 12);
+    tree.insert(new float[] {-127.87806f, 2.7788544f, -49.90689f}, 13);
+    tree.delete(new float[] {-133.35106f, -27.210342f, -20.107727f}, 0);
+    tree.delete(new float[] {-127.87806f, 2.7788544f, -49.90689f}, 13);
+    tree.delete(new float[] {-111.65004f, 32.36528f, -83.63572f}, 12);
+    tree.delete(new float[] {-75.07794f, 55.577896f, -104.90407f}, 11);
+    tree.delete(new float[] {-28.798616f, 63.59677f, -101.57546f}, 10);
+    tree.delete(new float[] {49.884323f, 57.874786f, -95.06121f}, 9);
+    tree.delete(new float[] {90.21576f, 41.889008f, -84.45425f}, 8);
+  }
 }

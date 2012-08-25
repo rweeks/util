@@ -26,6 +26,8 @@ public class RTree<T>
   private final int minEntries;
   private final int numDims;
 
+  private final float[] pointDims;
+
   private Node root;
 
   private volatile int size;
@@ -46,6 +48,7 @@ public class RTree<T>
     this.numDims = numDims;
     this.maxEntries = maxEntries;
     this.minEntries = minEntries;
+    pointDims = new float[numDims];
     root = buildRoot(true);
   }
 
@@ -165,6 +168,10 @@ public class RTree<T>
     assert (coords.length == numDims);
     assert (dimensions.length == numDims);
     Node l = findLeaf(root, coords, dimensions, entry);
+    if ( l == null ) {
+      System.out.println("WTF?");
+      findLeaf(root, coords, dimensions, entry);
+    }
     assert (l != null) : "Could not find leaf for entry to delete";
     assert (l.leaf) : "Entry is not found at leaf?!?";
     ListIterator<Node> li = l.children.listIterator();
@@ -190,6 +197,11 @@ public class RTree<T>
       root = buildRoot(true);
     }
     return (removed != null);
+  }
+
+  public boolean delete(float[] coords, T entry)
+  {
+    return delete(coords, pointDims, entry);
   }
 
   private Node findLeaf(Node n, float[] coords, float[] dimensions, T entry)
@@ -317,6 +329,16 @@ public class RTree<T>
     {
       adjustTree(l, null);
     }
+  }
+
+  /**
+   * Convenience method for inserting a point
+   * @param coords
+   * @param entry
+   */
+  public void insert(float[] coords, T entry)
+  {
+    insert(coords, pointDims, entry);
   }
 
   private void adjustTree(Node n, Node nn)
@@ -595,6 +617,7 @@ public class RTree<T>
   private boolean isOverlap(float[] scoords, float[] sdimensions,
       float[] coords, float[] dimensions)
   {
+    final float FUDGE_FACTOR=1.001f;
     for (int i = 0; i < scoords.length; i++)
     {
       boolean overlapInThisDimension = false;
@@ -604,14 +627,14 @@ public class RTree<T>
       }
       else if (scoords[i] < coords[i])
       {
-        if (scoords[i] + sdimensions[i] >= coords[i])
+        if (scoords[i] + FUDGE_FACTOR*sdimensions[i] >= coords[i])
         {
           overlapInThisDimension = true;
         }
       }
       else if (scoords[i] > coords[i])
       {
-        if (coords[i] + dimensions[i] >= scoords[i])
+        if (coords[i] + FUDGE_FACTOR*dimensions[i] >= scoords[i])
         {
           overlapInThisDimension = true;
         }
