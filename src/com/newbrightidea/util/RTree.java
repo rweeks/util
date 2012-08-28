@@ -21,12 +21,15 @@ import java.util.Set;
  */
 public class RTree<T>
 {
+  public enum SeedPicker { LINEAR, QUADRATIC }
 
   private final int maxEntries;
   private final int minEntries;
   private final int numDims;
 
   private final float[] pointDims;
+
+  private final SeedPicker seedPicker;
 
   private Node root;
 
@@ -42,14 +45,20 @@ public class RTree<T>
    * @param numDims
    *          the number of dimensions of the RTree.
    */
-  public RTree(int maxEntries, int minEntries, int numDims)
+  public RTree(int maxEntries, int minEntries, int numDims, SeedPicker seedPicker)
   {
     assert (minEntries <= (maxEntries / 2));
     this.numDims = numDims;
     this.maxEntries = maxEntries;
     this.minEntries = minEntries;
+    this.seedPicker = seedPicker;
     pointDims = new float[numDims];
     root = buildRoot(true);
+  }
+
+  public RTree(int maxEntries, int minEntries, int numDims)
+  {
+    this(maxEntries, minEntries, numDims, SeedPicker.LINEAR);
   }
 
   private Node buildRoot(boolean asLeaf)
@@ -70,7 +79,7 @@ public class RTree<T>
    */
   public RTree()
   {
-    this(50, 2, 2);
+    this(50, 2, 2, SeedPicker.LINEAR);
   }
 
   /**
@@ -375,6 +384,10 @@ public class RTree<T>
 
   private Node[] splitNode(Node n)
   {
+    // TODO: this class probably calls "tighten" a little too often.
+    // For instance the call at the end of the "while (!cc.isEmpty())" loop
+    // could be modified and inlined because it's only adjusting for the addition
+    // of a single node.  Left as-is for now for readability.
     @SuppressWarnings("unchecked")
     Node[] nn = new RTree.Node[]
     { n, new Node(n.coords, n.dimensions, n.leaf) };
@@ -385,9 +398,10 @@ public class RTree<T>
     }
     LinkedList<Node> cc = new LinkedList<Node>(n.children);
     n.children.clear();
-    Node[] ss = pickSeeds(cc);
+    Node[] ss = seedPicker == SeedPicker.LINEAR ? lPickSeeds(cc) : qPickSeeds(cc);
     nn[0].children.add(ss[0]);
     nn[1].children.add(ss[1]);
+    tighten(nn);
     while (!cc.isEmpty())
     {
       if ((nn[0].children.size() >= minEntries)
@@ -395,8 +409,7 @@ public class RTree<T>
       {
         nn[1].children.addAll(cc);
         cc.clear();
-        tighten(nn[0]); // Not sure this is required.
-        tighten(nn[1]);
+        tighten(nn); // Not sure this is required.
         return nn;
       }
       else if ((nn[1].children.size() >= minEntries)
@@ -404,13 +417,11 @@ public class RTree<T>
       {
         nn[0].children.addAll(cc);
         cc.clear();
-        tighten(nn[0]); // Not sure this is required.
-        tighten(nn[1]);
+        tighten(nn); // Not sure this is required.
         return nn;
       }
-      Node c = cc.pop();
+      Node c = seedPicker == SeedPicker.LINEAR ? lPickNext(cc) : qPickNext(cc, nn);
       Node preferred;
-      // Implementation of linear PickNext
       float e0 = getRequiredExpansion(nn[0].coords, nn[0].dimensions, c);
       float e1 = getRequiredExpansion(nn[1].coords, nn[1].dimensions, c);
       if (e0 < e1)
@@ -450,16 +461,75 @@ public class RTree<T>
         }
       }
       preferred.children.add(c);
+      tighten(preferred);
     }
-    tighten(nn[0]);
-    tighten(nn[1]);
     return nn;
   }
 
-  // Implementation of LinearPickSeeds
-  private RTree<T>.Node[] pickSeeds(LinkedList<Node> nn)
+  // Implementation of Quadratic PickSeeds
+  private RTree<T>.Node[] qPickSeeds(LinkedList<Node> nn)
   {
-    RTree<T>.Node[] bestPair = null;
+    @SuppressWarnings("unchecked")
+    RTree<T>.Node[] bestPair = new RTree.Node[2];
+    float maxWaste = -1.0f * Float.MAX_VALUE;
+    for (Node n1: nn)
+    {
+      for (Node n2: nn)
+      {
+        if (n1 == n2) continue;
+        float n1a = getArea(n1.dimensions);
+        float n2a = getArea(n2.dimensions);
+        float ja = 1.0f;
+        for ( int i = 0; i < numDims; i++ )
+        {
+          float jc0 = Math.min(n1.coords[i], n2.coords[i]);
+          float jc1 = Math.max(n1.coords[i] + n1.dimensions[i], n2.coords[i] + n2.dimensions[i]);
+          ja *= (jc1 - jc0);
+        }
+        float waste = ja - n1a - n2a;
+        if ( waste > maxWaste )
+        {
+          maxWaste = waste;
+          bestPair[0] = n1;
+          bestPair[1] = n2;
+        }
+      }
+    }
+    nn.remove(bestPair[0]);
+    nn.remove(bestPair[1]);
+    return bestPair;
+  }
+
+  /**
+   * Implementation of QuadraticPickNext
+   * @param cc the children to be divided between the new nodes, one item will be removed from this list.
+   * @param nn the candidate nodes for the children to be added to.
+   */
+  private Node qPickNext(LinkedList<Node> cc, Node[] nn)
+  {
+    float maxDiff = -1.0f * Float.MAX_VALUE;
+    Node nextC = null;
+    for ( Node c: cc )
+    {
+      float n0Exp = getRequiredExpansion(nn[0].coords, nn[0].dimensions, c);
+      float n1Exp = getRequiredExpansion(nn[1].coords, nn[1].dimensions, c);
+      float diff = Math.abs(n1Exp - n0Exp);
+      if (diff > maxDiff)
+      {
+        maxDiff = diff;
+        nextC = c;
+      }
+    }
+    assert (nextC != null) : "No node selected from qPickNext";
+    cc.remove(nextC);
+    return nextC;
+  }
+
+  // Implementation of LinearPickSeeds
+  private RTree<T>.Node[] lPickSeeds(LinkedList<Node> nn)
+  {
+    @SuppressWarnings("unchecked")
+    RTree<T>.Node[] bestPair = new RTree.Node[2];
     float bestSep = 0.0f;
     for (int i = 0; i < numDims; i++)
     {
@@ -491,8 +561,8 @@ public class RTree<T>
                   Math.abs((dimMinUb - dimMaxLb) / (dimUb - dimLb));
       if (sep >= bestSep)
       {
-        bestPair = new RTree.Node[]
-        { nMaxLb, nMinUb };
+        bestPair[0] = nMaxLb;
+        bestPair[1] = nMinUb;
         bestSep = sep;
       }
     }
@@ -508,39 +578,51 @@ public class RTree<T>
     return bestPair;
   }
 
-  private void tighten(Node n)
+  /**
+   * Implementation of LinearPickNext
+   * @param cc the children to be divided between the new nodes, one item will be removed from this list.
+   */
+  private Node lPickNext(LinkedList<Node> cc)
   {
-    assert(n.children.size() > 0) : "tighten() called on empty node!";
-    float[] minCoords = new float[numDims];
-    float[] maxCoords = new float[numDims];
-    for (int i = 0; i < numDims; i++)
-    {
-      minCoords[i] = Float.MAX_VALUE;
-      maxCoords[i] = Float.MIN_VALUE;
+    return cc.pop();
+  }
 
-      for (Node c : n.children)
+  private void tighten(Node... nodes)
+  {
+    assert(nodes.length >= 1): "Pass some nodes to tighten!";
+    for (Node n: nodes) {
+      assert(n.children.size() > 0) : "tighten() called on empty node!";
+      float[] minCoords = new float[numDims];
+      float[] maxCoords = new float[numDims];
+      for (int i = 0; i < numDims; i++)
       {
-        // we may have bulk-added a bunch of children to a node (eg. in
-        // splitNode)
-        // so here we just enforce the child->parent relationship.
-        c.parent = n;
-        if (c.coords[i] < minCoords[i])
+        minCoords[i] = Float.MAX_VALUE;
+        maxCoords[i] = Float.MIN_VALUE;
+
+        for (Node c : n.children)
         {
-          minCoords[i] = c.coords[i];
-        }
-        if ((c.coords[i] + c.dimensions[i]) > maxCoords[i])
-        {
-          maxCoords[i] = (c.coords[i] + c.dimensions[i]);
+          // we may have bulk-added a bunch of children to a node (eg. in
+          // splitNode)
+          // so here we just enforce the child->parent relationship.
+          c.parent = n;
+          if (c.coords[i] < minCoords[i])
+          {
+            minCoords[i] = c.coords[i];
+          }
+          if ((c.coords[i] + c.dimensions[i]) > maxCoords[i])
+          {
+            maxCoords[i] = (c.coords[i] + c.dimensions[i]);
+          }
         }
       }
+      for (int i = 0; i < numDims; i++)
+      {
+        // Convert max coords to dimensions
+        maxCoords[i] -= minCoords[i];
+      }
+      System.arraycopy(minCoords, 0, n.coords, 0, numDims);
+      System.arraycopy(maxCoords, 0, n.dimensions, 0, numDims);
     }
-    for (int i = 0; i < numDims; i++)
-    {
-      // Convert max coords to dimensions
-      maxCoords[i] -= minCoords[i];
-    }
-    System.arraycopy(minCoords, 0, n.coords, 0, numDims);
-    System.arraycopy(maxCoords, 0, n.dimensions, 0, numDims);
   }
 
   private RTree<T>.Node chooseLeaf(RTree<T>.Node n, RTree<T>.Entry e)

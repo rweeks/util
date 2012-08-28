@@ -93,10 +93,10 @@ public class TestRTree
   @Test
   public void testSplitNodesSmall()
   {
-    RTree<Object> rt = new RTree(2,1,2);
+    RTree<Object> rt = new RTree(2,1,2, RTree.SeedPicker.QUADRATIC);
     float[][] coords = new float[][] { {0.0f, 0.0f}, {1.0f, 1.0f}, {2.0f, 2.0f}, {3.0f, 3.0f} };
     float[] dims = new float[]{0.5f, 0.5f};
-    Object[] entries = new Object[] { new Object(), new Object(), new Object(), new Object() };
+    Object[] entries = new Object[] { 0, 1, 2, 3 };
     for (int i = 0; i < entries.length; i++ )
     {
       rt.insert(coords[i], dims, entries[i]);
@@ -264,10 +264,10 @@ public class TestRTree
 
     for ( int j = 0; j < 500; j++ )
     {
-      RTree<Integer> tree = new RTree<Integer>(10, 2, 3);
+      RTree<Integer> tree = new RTree<Integer>(10, 2, 3, RTree.SeedPicker.LINEAR);
       List<DataObject> rects = new ArrayList<DataObject>();
 
-      for (int i = 0; i < 100; i++) {
+      for (int i = 0; i < 150; i++) {
         rects.add(new DataObject(
             new float[]{i, i * 2, i * 3},
             new float[]{0, 0, 0},
@@ -276,7 +276,7 @@ public class TestRTree
         tree.insert(dataObject.val, dataObject.dim, dataObject.id);
       }
 
-      for (int i = 0; i < 100; i++) {
+      for (int i = 0; i < 150; i++) {
         DataObject dataObject = rects.get(i);
         boolean deleted = tree.delete(dataObject.val, dataObject.dim, dataObject.id);
         assert deleted;
