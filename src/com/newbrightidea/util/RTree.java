@@ -530,6 +530,7 @@ public class RTree<T>
   {
     @SuppressWarnings("unchecked")
     RTree<T>.Node[] bestPair = new RTree.Node[2];
+    boolean foundBestPair = false;
     float bestSep = 0.0f;
     for (int i = 0; i < numDims; i++)
     {
@@ -564,12 +565,13 @@ public class RTree<T>
         bestPair[0] = nMaxLb;
         bestPair[1] = nMinUb;
         bestSep = sep;
+        foundBestPair = true;
       }
     }
     // In the degenerate case where all points are the same, the above
     // algorithm does not find a best pair.  Just pick the first 2
     // children.
-    if ( bestPair == null )
+    if ( !foundBestPair )
     {
       bestPair = new RTree.Node[] { nn.get(0), nn.get(1) };
     }
