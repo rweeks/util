@@ -683,7 +683,7 @@ public class RTree<T>
     float expanded = 1.0f;
     for (int i = 0; i < dimensions.length; i++)
     {
-      area *= dimensions[i] + deltas[i];
+      expanded *= dimensions[i] + deltas[i];
     }
     return (expanded - area);
   }
