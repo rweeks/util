@@ -599,7 +599,7 @@ public class RTree<T>
       for (int i = 0; i < numDims; i++)
       {
         minCoords[i] = Float.MAX_VALUE;
-        maxCoords[i] = Float.MIN_VALUE;
+        maxCoords[i] = -1.0f * Float.MIN_VALUE;
 
         for (Node c : n.children)
         {
