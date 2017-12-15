@@ -1,12 +1,10 @@
 package com.newbrightidea.util;
 
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestRTree {
     private static final float[] ZEROES = {0.0f, 0.0f};
@@ -185,28 +183,6 @@ public class TestRTree {
             assert (results.size() == 1);
             assert (results.get(0) == entries[i]);
         }
-    }
-
-    @Test
-    public void testVisualize()
-            throws Exception {
-        RTree<Object> rt = new RTree<Object>(50, 2, 2);
-        int numEntries = rt.getMaxEntries() * 4;
-        float[] coords = new float[]{0.0f, 0.0f};
-        float[] dims = new float[]{0.5f, 0.5f};
-        Object[] entries = new Object[numEntries];
-
-        for (int i = 0; i < numEntries; i++) {
-            coords[0] = i;
-            entries[i] = new Object();
-            rt.insert(coords, dims, entries[i]);
-        }
-        String html = rt.visualize();
-        System.err.println("Writing to " + System.getProperty("java.io.tmpdir"));
-        OutputStream os = new FileOutputStream(System.getProperty("java.io.tmpdir") + "/rtree.html");
-        os.write(html.getBytes());
-        os.flush();
-        os.close();
     }
 
     @Test

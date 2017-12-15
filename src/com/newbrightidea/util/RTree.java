@@ -1,10 +1,12 @@
 package com.newbrightidea.util;
 
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -280,6 +282,33 @@ public class RTree<T> {
      */
     public void insert(float[] coords, T entry) {
         insert(coords, pointDims, entry);
+    }
+
+    public void visit(NodeVisitor<T> nv) {
+        float[] coordBuf = new float[numDims];
+        float[] dimBuf = new float[numDims];
+        Queue<Node> toVisit = new LinkedList<>();
+        Map<Node,Integer> nodeDepths = new HashMap<>();
+        nodeDepths.put(root, 0);
+        toVisit.add(root);
+        while (!toVisit.isEmpty()) {
+            Node currentNode = toVisit.remove();
+            if (currentNode.parent != null) {
+                nodeDepths.put(currentNode, nodeDepths.get(currentNode.parent) + 1);
+            }
+            System.arraycopy(currentNode.coords, 0, coordBuf, 0, numDims);
+            System.arraycopy(currentNode.dimensions, 0, dimBuf, 0, numDims);
+            if (currentNode instanceof RTree.Entry) {
+                nv.visit(nodeDepths.get(currentNode), coordBuf, dimBuf, ((Entry)currentNode).entry);
+            } else {
+                nv.visit(nodeDepths.get(currentNode), coordBuf, dimBuf, null);
+            }
+            toVisit.addAll(currentNode.children);
+        }
+    }
+
+    public interface NodeVisitor<V> {
+        public void visit(int depth, float[] coords, float[] dimensions, V value);
     }
 
     private void adjustTree(Node n, Node nn) {
@@ -621,41 +650,5 @@ public class RTree<T> {
         public String toString() {
             return "Entry: " + entry;
         }
-    }
-
-    // The methods below this point can be used to create an HTML rendering
-    // of the RTree.  Maybe useful for debugging?
-
-    private static final int elemWidth = 150;
-    private static final int elemHeight = 120;
-
-    String visualize() {
-        int ubDepth = (int) Math.ceil(Math.log(size) / Math.log(minEntries)) * elemHeight;
-        int ubWidth = size * elemWidth;
-        java.io.StringWriter sw = new java.io.StringWriter();
-        java.io.PrintWriter pw = new java.io.PrintWriter(sw);
-        pw.println("<html><head></head><body>");
-        visualize(root, pw, 0, 0, ubWidth, ubDepth);
-        pw.println("</body>");
-        pw.flush();
-        return sw.toString();
-    }
-
-    private void visualize(Node n, java.io.PrintWriter pw, int x0, int y0, int w, int h) {
-        pw.printf("<div style=\"position:absolute; left: %d; top: %d; width: %d; height: %d; border: 1px dashed\">\n",
-                x0, y0, w, h);
-        pw.println("<pre>");
-        pw.println("Node: " + n.toString() + " (root==" + (n == root) + ") \n");
-        pw.println("Coords: " + Arrays.toString(n.coords) + "\n");
-        pw.println("Dimensions: " + Arrays.toString(n.dimensions) + "\n");
-        pw.println("# Children: " + ((n.children == null) ? 0 : n.children.size()) + "\n");
-        pw.println("isLeaf: " + n.leaf + "\n");
-        pw.println("</pre>");
-        int numChildren = (n.children == null) ? 0 : n.children.size();
-        for (int i = 0; i < numChildren; i++) {
-            visualize(n.children.get(i), pw, (int) (x0 + (i * w / (float) numChildren)),
-                    y0 + elemHeight, (int) (w / (float) numChildren), h - elemHeight);
-        }
-        pw.println("</div>");
     }
 }
